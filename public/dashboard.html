@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+  <script type="text/javascript" src="Leaflet.Icon.Glyph.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+    /* Custom styles */
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    
+    #sidebar {
+      width: 300px;
+      height: 100vh;
+      background-color: #f5f5f57c;
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+      position: absolute;
+    }
+
+    .bottom-navbar{
+      position:absolute;
+      bottom:0;
+      width:90%;
+      height: 8%;
+      background-color: #f5f5f57c;
+      backdrop-filter: blur(5px);
+      z-index:2;
+      display: none;
+      justify-content: space-between;
+      border: 2px solid #707070;
+      border-bottom: none;
+      border-radius: 25px 25px 0 0;
+    }
+
+    @media only screen and (max-device-width: 685px){
+      #sidebar {
+        display:none;
+      }
+      #map > div.leaflet-control-container > div.leaflet-bottom.leaflet-right > div.leaflet-control-zoom.leaflet-bar.leaflet-control {
+        margin-bottom: calc(6vh + 10px)
+      }
+      .bottom-navbar{
+        display: flex;
+      }
+    }
+
+    .bottom-navbar-container{
+      position:absolute;
+      bottom:0;
+      width:100%;
+      height:100%;
+      display:flex;
+      justify-content: center;
+    }
+
+    .bottom-navbar > * > i{
+      margin:auto;
+    }
+
+    #logo {
+      width: 90%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin:auto;
+      margin-bottom:0;
+      margin-top:0;
+      background-color: #97979741;
+      padding-top:10px;
+      padding-bottom:10px;
+      border: 2px solid #707070;
+      border-top: none;
+      border-radius: 0 0 25px 25px;
+    }
+
+    #logo img {
+      max-width: 80%;
+      height: auto;
+    }
+    
+    #device-list {
+      width: 100%;
+      overflow-y: auto;
+    }
+    
+    .device-item {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .device-item:hover {
+      background-color: #0000000a;
+    }
+    
+    .device-name {
+      font-weight: bold;
+    }
+    
+    .device-info {
+      margin-top: 4px;
+    }
+    
+    .device-icon {
+      margin-right: 12px;
+    }
+
+    .bottomsidebar {
+      width: 90%;
+      margin: 10px;
+      margin-top: auto;
+      background-color: #97979741;
+      padding-top:10px;
+      border: 2px solid #707070;
+      border-radius: 25px;
+    }
+
+    #user-profile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+
+    #user-profile img {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 8px;
+    }
+
+    #user-profile .user-name {
+      font-weight: bold;
+    }
+
+    #footer-icons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      padding: 8px 16px;
+    }
+
+    .footer-icon-container {
+      width: 50%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .footer-icon-container:hover .material-icons {
+      color: #3d3d3d;
+    }
+
+    .footer-icon-container .material-icons {
+      font-size: 24px;
+      color: black;
+      cursor: pointer;
+    }
+
+    /* New styles for hover effects */
+
+    .device-item:hover .device-info {
+      display: block;
+      height: 100%;
+    }
+
+    .device-item:hover .device-actions {
+      display: flex;
+      height: 100%;
+    }
+
+    .device-item:hover {
+        background-color: #0000000a;
+    }
+
+    .device-info.hidden,
+    .device-actions.hidden {
+      display: none;
+    }
+
+    /* Styles for the ring button */
+
+    .ring-button {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 16px;
+      background-color: #e0e0e079;
+      color: #000000;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      margin:2px;
+      margin-top: 8px;
+    }
+
+    .ring-button:focus{
+      background-color: #e0e0e079;
+    }
+
+    .ring-button .material-icons {
+      font-size: 18px;
+      margin-right: 4px;
+    }
+
+    .device-item:hover .ring-button {
+      display: inline-flex;
+    }
+
+    #map {
+      background-color: white;
+      position:absolute;
+      top:0;
+      left:0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    nologin=true;
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith("token" + '=')) {
+        nologin=false;
+      }
+    }
+    if(nologin) window.location.pathname = '/';
+  </script>
+  <div id="map"></div>
+  <div class="bottom-navbar-container">
+    <div class="bottom-navbar">
+      <div class="footer-icon-container"><i class="material-icons">devices</i></div>
+      <div class="footer-icon-container"><i class="material-icons">person</i></div>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div id="logo">
+      <img src="logo.png" alt="Logo Placeholder">
+    </div>
+
+    <ul id="device-list">
+      <!-- device items here -->
+    </ul>
+
+    <div class="bottomsidebar">
+      <div id="user-profile">
+        <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile Picture">
+        <span class="user-name">John Doe</span>
+      </div>
+  
+      <div id="footer-icons">
+        <div class="footer-icon-container" onclick="(()=>{
+          document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          window.location.pathname = '/'
+        })();">
+          <i class="material-icons">exit_to_app</i>
+        </div>
+        <div class="footer-icon-container">
+          <i class="material-icons">settings</i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="border: 2px solid #707070;border-right:none;border-top:none;z-index:1200;position: absolute; top: 0px; right: 0px; backdrop-filter: blur(5px); border-radius: 0 0 0 10px; padding: 5px; background-color: rgba(255, 255, 255, 0.5);">
+    <span style="font-size: 12px;font-weight: bold;">Made with ❤️ by Jakub Kowal</span>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>  
+    class DeviceTracker {
+      constructor(deviceList, map) {
+        this.deviceList = deviceList;
+        this.map = map;
+        this.devices = [];
+      }
+
+      addDevice(deviceId, deviceName, deviceType, loc, lastSeen, locationHistory, locationProvider="N/A", deviceEAN="N/A", deviceIMEI="N/A") {
+        const deviceItem = document.createElement("li");
+        deviceItem.classList.add("device-item");
+
+        const deviceIcon = document.createElement("i");
+        deviceIcon.classList.add("material-icons", "device-icon");
+        deviceIcon.innerText = this.getDeviceIcon(deviceType);
+
+        const deviceInfoContainer = document.createElement("div");
+        deviceInfoContainer.classList.add("device-info-container");
+
+        const deviceNameElement = document.createElement("span");
+        deviceNameElement.classList.add("device-name");
+        deviceNameElement.innerText = deviceName;
+
+        const deviceLastSeenElement = document.createElement("span");
+        deviceLastSeenElement.classList.add("device-info");
+        deviceLastSeenElement.id = "device-last-seen-"+deviceId;
+        deviceLastSeenElement.setAttribute("lastseendate",lastSeen);
+        deviceLastSeenElement.innerText = this.formatLastSeenDate(lastSeen);
+
+        const deviceInfo = document.createElement("span");
+        deviceInfo.classList.add("device-info", "hidden");
+        deviceInfo.innerHTML = "EAN: " + deviceEAN + "<br>IMEI: " + deviceIMEI + "<br>Location Provider: " + locationProvider;
+
+        const deviceActions = document.createElement("div");
+        deviceActions.classList.add("device-actions", "hidden");
+
+        const ringButton = document.createElement("button");
+        ringButton.classList.add("ring-button");
+        ringButton.innerHTML = '<i class="material-icons">ring_volume</i> Ring Device';
+        const historyButton = document.createElement("button");
+        historyButton.classList.add("ring-button");
+        historyButton.innerHTML = '<i class="material-icons">timeline</i> Show History';
+
+        const marker = L.marker(loc, { icon: L.icon.glyph({ prefix: 'mdi', glyph: this.getDeviceIcon(deviceType, true) }) }).addTo(this.map);
+        marker.bindPopup("<b>"+deviceName + "</b><br>" + this.formatLastSeenDate(lastSeen));
+        
+        if(locationHistory.length > 0) {
+          locationHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          const historyline = L.polyline(locationHistory.map((locationreport) => locationreport.location), {color: 'red', opacity: 0}).addTo(map)
+          historyButton.addEventListener('click',() => {
+            if (historyline.options.opacity === 0) {
+              historyline.setStyle({ opacity: 1 });
+            } else {
+              historyline.setStyle({ opacity: 0 });
+            }
+          })
+        }
+        
+        deviceItem.addEventListener("dblclick",()=>{
+          if (event.target.closest('button')) return;
+          this.map.flyTo(marker.getLatLng(),16)
+          marker.openPopup()
+        })
+
+        deviceItem.appendChild(deviceIcon);
+        deviceItem.appendChild(deviceInfoContainer);
+        deviceInfoContainer.appendChild(deviceNameElement);
+        deviceInfoContainer.appendChild(document.createElement("br"));
+        deviceInfoContainer.appendChild(deviceLastSeenElement);
+        deviceInfoContainer.appendChild(deviceInfo);
+        deviceInfoContainer.appendChild(ringButton);
+        deviceInfoContainer.appendChild(historyButton);
+        deviceItem.appendChild(deviceActions);
+
+        this.deviceList.appendChild(deviceItem);
+        setInterval(()=>{this.updateLastSeenText(deviceId)},60000);
+        this.devices.push({ deviceItem, marker, historyline, deviceId, deviceName });
+      }
+
+      updateLastSeenText(deviceId){
+        const DOMElem = document.getElementById("device-last-seen-"+deviceId);
+        const device = this.devices.find(device => device.deviceId === deviceId);
+        DOMElem.innerHTML = this.formatLastSeenDate(DOMElem.getAttribute("lastseendate"));
+        device.marker.setPopupContent("<b>"+device.deviceName + "</b><br>" + this.formatLastSeenDate(DOMElem.getAttribute("lastseendate")))
+      }
+
+      updateDeviceLocation(deviceId, newLocation) {
+        console.log(deviceId,newLocation)
+        const device = this.devices.find(device => device.deviceId === deviceId);
+        if (device) {
+          var newLatLng = new L.LatLng(newLocation[0], newLocation[1])
+          device.marker.setLatLng(newLatLng);
+          document.getElementById("device-last-seen-"+deviceId).setAttribute("lastseendate",new Date().toISOString());
+          this.updateLastSeenText(deviceId)
+        }
+      }
+
+      getDeviceIcon(deviceType, mdi = false) {
+        switch (deviceType) {
+          case "phone":
+            return mdi ? "cellphone" : "smartphone";
+          case "tablet":
+            return "tablet";
+          case "laptop":
+            return "laptop";
+          case "watch":
+            return "watch";
+          case "tag":
+            return "nfc";
+          default:
+            return "devices";
+        }
+      }
+
+      formatLastSeenDate(isoDate) {
+        const now = new Date();
+        const lastSeenDate = new Date(isoDate);
+        const timeDiffInMilliseconds = now - lastSeenDate;
+        const timeDiffInSeconds = Math.floor(timeDiffInMilliseconds / 1000);
+
+        if (timeDiffInSeconds < 60) {
+          return "last seen just now";
+        } else if (timeDiffInSeconds < 3600) {
+          const minutes = Math.floor(timeDiffInSeconds / 60);
+          return `last seen ${minutes} minutes ago`;
+        } else if (timeDiffInSeconds < 86400) {
+          const hours = Math.floor(timeDiffInSeconds / 3600);
+          const minutes = Math.floor((timeDiffInSeconds % 3600) / 60);
+          const meridiem = hours >= 12 ? "pm" : "am";
+          const formattedHours = hours % 12 || 12;
+          return `last seen today at ${formattedHours}:${minutes.toString().padStart(2, "0")} ${meridiem}`;
+        } else if (timeDiffInSeconds < 172800) {
+          return `last seen yesterday at ${lastSeenDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+        } else if (timeDiffInSeconds < 604800) {
+          const days = Math.floor(timeDiffInSeconds / 86400);
+          const hours = Math.floor((timeDiffInSeconds % 86400) / 3600);
+          const minutes = Math.floor((timeDiffInSeconds % 3600) / 60);
+          const meridiem = lastSeenDate.getHours() >= 12 ? "pm" : "am";
+          const formattedHours = lastSeenDate.getHours() % 12 || 12;
+          return `last seen ${days} days ago at ${formattedHours}:${minutes.toString().padStart(2, "0")} ${meridiem}`;
+        } else {
+          const formattedDate = lastSeenDate.toLocaleDateString([], {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+          return `last seen ${formattedDate}`;
+        }
+      }
+    }
+
+    // Add sample devices
+    var map = L.map('map',{zoomControl: false});
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position)=>{
+        map.setView([position.coords.latitude, position.coords.longitude], 13)
+      });
+    }
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+    const deviceListElement = document.getElementById("device-list");
+    const deviceTracker = new DeviceTracker(deviceListElement, map);
+    var socket = io({
+      extraHeaders:{ "Authorization": "Bearer "+document.cookie.match(/(^|;) ?token=([^;]*)(;|$)/)[2] }
+    })
+
+    socket.on('new-device',(device) => {
+      latestLocation = device.positionReports.reduce((latest, item) => (item.timestamp > latest.timestamp ? item : latest))
+      deviceTracker.addDevice(device._id, device.displayName, device.deviceType, latestLocation.location, latestLocation.timestamp, device.positionReports)
+      console.log(latestLocation)
+    })
+
+    socket.on('location-report', (data) => {
+      console.log(data,data.location)
+      deviceTracker.updateDeviceLocation(data.deviceId, data.location)
+    })
+  </script>
+</body>
+</html>
+
+
+

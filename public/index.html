@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+  crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""></script>
+  <style>
+    @font-face {
+        font-family: 'Marguerite1';
+        src:url('Marguerite1.ttf.woff') format('woff'),
+            url('Marguerite1.ttf.svg#Marguerite1') format('svg'),
+            url('Marguerite1.ttf.eot'),
+            url('Marguerite1.ttf.eot?#iefix') format('embedded-opentype'); 
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .flex-container {
+      display:flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .container {
+      width: auto;
+      min-width: 30vw;
+      max-width: 38vw;
+      height: auto;
+      overflow: hidden;
+      background-color: #f5f5f57c;
+      backdrop-filter: blur(5px);
+      border: 2px solid #707070;
+      border-radius: 25px;
+      z-index: 1000;
+      padding:50px;
+      padding-top: 0;
+      transition: 1s;
+    }
+
+    @media only screen and (max-device-width: 685px){
+      .container {
+        min-width: 80vw;
+        max-width: 80vw;
+      }
+    }
+
+    #logo {
+      width: 80%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin:auto;
+      margin-bottom:0;
+      margin-top:0;
+      background-color: #97979741;
+      padding-top:10px;
+      padding-bottom:10px;
+      border: 2px solid #707070;
+      border-top: none;
+      border-radius: 0 0 25px 25px;
+    }
+
+    #logo img {
+      max-width: 80%;
+      height: auto;
+    }
+    input#email{
+      display: inline-block !important;
+      width: auto !important;
+    }
+
+    h4{
+      font-family: 'Marguerite1';
+      color: #03afef;
+    }
+    h5{
+      margin-bottom:30px;
+    }
+
+    input:not([type]):focus:not([readonly]), input[type=text]:not(.browser-default):focus:not([readonly]), input[type=password]:not(.browser-default):focus:not([readonly]), input[type=email]:not(.browser-default):focus:not([readonly]), input[type=url]:not(.browser-default):focus:not([readonly]), input[type=time]:not(.browser-default):focus:not([readonly]), input[type=date]:not(.browser-default):focus:not([readonly]), input[type=datetime]:not(.browser-default):focus:not([readonly]), input[type=datetime-local]:not(.browser-default):focus:not([readonly]), input[type=tel]:not(.browser-default):focus:not([readonly]), input[type=number]:not(.browser-default):focus:not([readonly]), input[type=search]:not(.browser-default):focus:not([readonly]), textarea.materialize-textarea:focus:not([readonly]) {
+        border-bottom: 1px solid #03afef !important;
+        -webkit-box-shadow: 0 1px 0 0 #03afef !important;
+        box-shadow: 0 1px 0 0 #03afef !important;
+    }
+
+    input:not([type]):focus:not([readonly])+label, input[type=text]:not(.browser-default):focus:not([readonly])+label, input[type=password]:not(.browser-default):focus:not([readonly])+label, input[type=email]:not(.browser-default):focus:not([readonly])+label, input[type=url]:not(.browser-default):focus:not([readonly])+label, input[type=time]:not(.browser-default):focus:not([readonly])+label, input[type=date]:not(.browser-default):focus:not([readonly])+label, input[type=datetime]:not(.browser-default):focus:not([readonly])+label, input[type=datetime-local]:not(.browser-default):focus:not([readonly])+label, input[type=tel]:not(.browser-default):focus:not([readonly])+label, input[type=number]:not(.browser-default):focus:not([readonly])+label, input[type=search]:not(.browser-default):focus:not([readonly])+label, textarea.materialize-textarea:focus:not([readonly])+label {
+        color: #03afef !important;
+    }
+
+    input#email{
+      width:100% !important;
+    }
+
+    input:autofill{
+      background-color: #03b0ef36 !important;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith("token" + '=')) {
+        window.location.pathname = '/dashboard.html'
+      }
+    }
+  </script>
+  <div id="map"></div>
+  <div class="flex-container">
+    <div class="container">
+      <div id="logo">
+        <img src="logo.png" alt="Logo Placeholder">
+      </div>
+      <h4>Hi</h4>
+      <h5>Let's start with your <span style="white-space: nowrap;">E-Mail</span></h5>
+      <div class="input-field">
+        <input id="email" type="email">
+        <label for="email">E-mail</label>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    function setCookie(name, value, daysToExpire) {
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + daysToExpire);
+
+      const cookieValue = encodeURIComponent(value) + '; expires=' + expirationDate.toUTCString() + '; path=/';
+
+      document.cookie = name + '=' + cookieValue;
+    }
+
+    var map = L.map('map',{zoomControl: false,dragging:false,scrollWheelZoom:false});
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position)=>{
+        map.setView([position.coords.latitude, position.coords.longitude], 13)
+      });
+    }
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    let typingTimer;
+    const typingInterval = 1000; // Adjust this value to set the interval for detecting when the user stops typing
+
+    async function onLogin(){
+      try {
+        username = document.getElementById('email').value;
+        password = document.getElementById('password').value;
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password, scopes:[
+            {"id":"device.add"},
+            {
+              "id":"device.writePosition",
+              "params":{
+                "devices":["user-owned"]
+              }
+            },
+            {
+              "id":"device.readPosition",
+              "params":{
+                "devices":["user-owned"]
+              }
+            }
+          ]}),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const token = data.token;
+          setCookie('token', token, 1);
+          document.querySelector('a.btn-small').classList.add('green');
+          document.querySelector('a.btn-small').innerHTML = `<i class="material-icons right">lock_open</i>Success`
+          setTimeout(()=>{
+            window.location.pathname = '/dashboard.html'
+          },3000)
+        } else {
+          // Handle login error (e.g., display an error message to the user)
+          const errorData = await response.json();
+          document.querySelector('a.btn-small').classList.add('red');
+          document.querySelector('a.btn-small').classList.remove("light-blue","lighten-1")
+          document.querySelector('a.btn-small').innerHTML = `<i class="material-icons right">lock_outline</i>`+errorData.error
+          setTimeout(()=>{
+            document.querySelector('a.btn-small').classList.remove('red');
+            document.querySelector('a.btn-small').classList.add("light-blue","lighten-1")
+            document.querySelector('a.btn-small').innerHTML = `<i class="material-icons right">lock_outline</i>Log in`
+          },3000)
+          console.log(errorData.error);
+        }
+      } catch (error) {
+        // Handle any network or server errors
+        console.error('Error during login', error);
+      }
+    }
+
+    function reformat(status) {
+      const container = document.querySelector("div.container")
+      container.style.maxHeight = "";
+      document.querySelector("div.container > h5").innerHTML = "Let's start with your E-Mail"
+      document.querySelector("input#email").focus();
+      document.querySelectorAll('input:not(#email)').forEach(input => {
+        input.parentNode.remove()
+      })
+      document.querySelectorAll('a.btn-small').forEach(input => {
+          input.remove()
+        });
+      if (status === "registered"){
+        var password = document.createElement('div')
+        var submitbtn = document.createElement('a')
+        password.classList.add('input-field')
+        password.innerHTML = `<input id="password" type="password">\n<label for="password">Password</label>`
+        submitbtn.classList.add("waves-effect","waves-light","btn-small","light-blue","lighten-1")
+        submitbtn.addEventListener('click', onLogin)
+        submitbtn.innerHTML = `<i class="material-icons right">lock_outline</i>Log in`
+        document.querySelector("div.container > h5").innerHTML = "Now please enter your password"
+        container.style.maxHeight = container.offsetHeight + 'px';
+        container.appendChild(password);
+        container.appendChild(submitbtn);
+        document.querySelector("input#password").focus();
+        container.style.maxHeight = "120vh";
+      }
+      if (status === "unregistered"){
+        var password = document.createElement('div')
+        password.classList.add('input-field')
+        password.innerHTML = `<input id="password" type="password">\n<label for="password">Password</label>`
+        document.querySelector("div.container > h5").innerHTML = "You need to register"
+        container.style.maxHeight = container.offsetHeight + 'px';
+        container.appendChild(password);
+        document.querySelector("input#password").focus();
+        container.style.maxHeight = "120vh";
+      }
+    }
+    // Add event listeners to the input fields you want to track
+    const inputFields = document.querySelectorAll('input#email');
+
+    inputFields.forEach((inputField) => {
+      inputField.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(userStoppedTyping, typingInterval);
+      });
+    });
+
+    function userStoppedTyping() {
+      const emailInput = document.querySelector("input#email");
+      const email = emailInput.value;
+
+      if(!email){
+        document.querySelector("div.container > h5").innerHTML = "Let's start with your E-Mail"
+        document.querySelector("input#email").focus();
+        document.querySelectorAll('input:not(#email)').forEach(input => {
+          input.parentNode.remove()
+        });
+        document.querySelectorAll('a.btn-small').forEach(input => {
+          input.remove()
+        });
+        return;
+      }
+
+      if(!(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email))) return;
+
+      dotting = setInterval(()=>{
+          document.querySelector("label[for='email']").innerHTML += "."
+          if(document.querySelector("label[for='email']").innerHTML.split("").length>3) document.querySelector("label[for='email']").innerHTML = "";
+      },100)
+
+      const requestData = {
+        email: email
+      };
+
+      fetch('/email-lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      }).then(response => response.json())
+      .then(data => {
+        clearInterval(dotting);
+        document.querySelector("label[for='email']").innerHTML = "E-mail"
+        if(data.error) throw new Error(data.error);
+        reformat(data.status);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>
