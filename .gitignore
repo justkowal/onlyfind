@@ -131,3 +131,7 @@ dist
 
 #vscode stuff
 .vscode
+
+#certificates obviously
+*.pem
+*.key

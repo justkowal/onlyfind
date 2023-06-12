@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const fs = require('fs');
+const key = fs.readFileSync('./key.pem');
+const cert = fs.readFileSync('./cert.pem');
 require('dotenv').config()
 
 Object.prototype.forEach = function (callback){
@@ -11,9 +14,8 @@ Object.prototype.forEach = function (callback){
   });
 }
 
-// Initialize Express app
 const app = express();
-const server = require('http').createServer(app);
+const server = require('https').createServer({key: key, cert: cert },app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
@@ -61,7 +63,7 @@ app.use((req,res,next) => {
 })
 
 // Connect to MongoDB
-mongoose.connect('mongodb+srv://'+process.env.DB_USERNAME+':'+process.env.DB_PASSWORD+'@cluster0.kwccfg3.mongodb.net/?retryWrites=true&w=majority', {
+mongoose.connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.kwccfg3.mongodb.net/?retryWrites=true&w=majority`, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
