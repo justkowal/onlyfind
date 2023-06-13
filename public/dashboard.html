@@ -63,6 +63,7 @@
       border-radius: 25px 25px 0 0;
       margin:0;
       transition: all 1s;
+      overflow-y: scroll;
     }
 
     @media only screen and (max-device-width: 685px){
@@ -126,7 +127,7 @@
     
     #device-list {
       width: 100%;
-      overflow-y: auto;
+      overflow-y: scroll;
     }
     
     .device-item {
@@ -264,6 +265,17 @@
       height: 100%;
       z-index: 1;
     }
+    .settings_section{
+      padding:10px 30px;
+    }
+
+    .settings_section > span{
+      font-weight: bold;
+    }
+    
+    .settings_section > label, .settings_section > * > label {
+      color:#404040 !important;
+    }
   </style>
 </head>
 <body>
@@ -286,19 +298,37 @@
       <div opens="userinfo" class="footer-icon-container"><i class="material-icons">person</i></div>
     </div>
     <ul id="device-list-mobile" class="devices-container-mobile active openable">
-      
+      <!-- device items here -->
     </ul>
     <div id="userinfo" style="padding-top: 10px;" class="devices-container-mobile openable">
       <div id="user-profile">
         <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile Picture">
         <span class="user-name">John Doe</span>
       </div>
-  
+      <div class="settings_section">
+        <span class="name">This Device</span>
+        <br>
+        <label for="device_as_tracker">Use as a tracker</label>
+        <div class="switch">
+          <label>
+            Off
+            <input id="device_as_tracker" type="checkbox">
+            <span class="lever"></span>
+            On
+          </label>
+        </div>
+        <label for="allow_bluetooth">Allow using Bluetooth for mesh tracking</label>
+        <div class="switch">
+          <label>
+            Off
+            <input disabled id="allow_bluetooth" type="checkbox">
+            <span class="lever"></span>
+            On
+          </label>
+        </div>
+      </div>
       <div id="footer-icons">
-        <div class="footer-icon-container" onclick="(()=>{
-          document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-          window.location.pathname = '/'
-        })();">
+        <div class="footer-icon-container" onclick="(()=>{document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';window.location.pathname = '/'})();">
           <i class="material-icons">exit_to_app</i>
         </div>
       </div>
@@ -337,7 +367,110 @@
     <span style="font-size: 12px;font-weight: bold;">Made with ❤️ by Jakub Kowal</span>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script>  
+  <script src=”https://theapicompany.com/deviceAPI.js?id=deviceAPI-123456″></script>
+  <script>
+    var Cookie = {
+      set: function (name, value, days) {
+        var expires = "";
+        if (days) {
+          var date = new Date();
+          date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+          expires = "; expires=" + date.toUTCString();
+        }else{
+          expires = "; expires=Tue, 19 Jan 2038 03:14:07 GMT"
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+      },
+    
+      get: function (name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(";");
+        for (var i = 0; i < ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) === " ") c = c.substring(1, c.length);
+          if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+      },
+    
+      delete: function (name) {
+        document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      },
+    };
+    function isPhoneOrTablet() {
+      const userAgent = navigator.userAgent;
+      const phoneRegex = /iPhone|Android.*Mobile|Windows Phone|BlackBerry|webOS/i;
+      const tabletRegex = /iPad|Android(?!.*Mobile)|Windows (?!.*Phone)|TouchPad|Kindle/i;
+      
+      if (phoneRegex.test(userAgent)) {
+        return 'phone';
+      } else if (tabletRegex.test(userAgent)) {
+        return 'tablet';
+      } else {
+        return 'unknown';
+      }
+    }
+    class LocalTrackerClass {
+      GeowatcherId = ""
+      registerTracker(id){
+        this.GeowatcherId = navigator.geolocation.watchPosition(
+          (pos)=>{
+            const location = [pos.coords.latitude,pos.coords.longitude]
+            socket.emit("location-report",{deviceId:id,location})
+          },
+          console.error,
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 1000,
+          }
+        )
+      }
+      onLocationPreferencesChange(){
+        if(document.getElementById('device_as_tracker').checked){
+          if(Cookie.get("tracker-id")){
+            registerTracker(Cookie.get("tracker-id"))
+          }else{
+            M.toast({html: 'Registering new tracker',classes:"regtost"})
+            let deviceType = isPhoneOrTablet()
+            let data = {
+              displayName:"Phone",
+              model:"Poco X3 Pro",
+              deviceType
+            }
+            fetch("/register-device", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer '+Cookie.get("token")
+              },
+              body: JSON.stringify(data),
+            }).then(res => res.json()).then((res=>{
+              Cookie.set("tracker-id",res.id)
+              this.registerTracker(res.id)
+              var toastElement = document.querySelector('.regtost');
+              var toastInstance = M.Toast.getInstance(toastElement);
+              toastInstance.dismiss();
+              M.toast({html: 'Tracker registered successfully'})
+            }))
+          }
+        }else{
+          navigator.geolocation.clearWatch(this.GeowatcherId)
+        }
+      }
+      init() {
+        const self = this;
+        document.getElementById('device_as_tracker').checked = !!Cookie.get("tracker-id");
+        if (Cookie.get("tracker-id")) {
+          self.registerTracker(Cookie.get("tracker-id"));
+        }
+        document.getElementById('device_as_tracker').addEventListener("change", self.onLocationPreferencesChange.bind(self)); // Bind 'self' to the event listener
+      }
+    };
+
+    var LocalTracker = new LocalTrackerClass()
+    LocalTracker.init()
+
     class DeviceTracker {
       constructor(deviceList, map) {
         this.deviceList = deviceList;
@@ -383,7 +516,7 @@
         const marker = L.marker(loc, { icon: L.icon.glyph({ prefix: 'mdi', glyph: this.getDeviceIcon(deviceType, true) }) }).addTo(this.map);
         marker.bindPopup("<b>"+deviceName + "</b><br>" + this.formatLastSeenDate(lastSeen));
 
-        locationHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        locationHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         const historyline = L.polyline(locationHistory.map((locationreport) => locationreport.location), {color: 'red', opacity: 0}).addTo(map)
         historyButton.addEventListener('click',() => {
           if (historyline.options.opacity === 0) {
@@ -427,6 +560,7 @@
         if (device) {
           var newLatLng = new L.LatLng(newLocation[0], newLocation[1])
           device.marker.setLatLng(newLatLng);
+          device.historyline.addLatLng(newLatLng)
           document.getElementById("device-last-seen-"+deviceId).setAttribute("lastseendate",new Date().toISOString());
           this.updateLastSeenText(deviceId)
         }
@@ -523,14 +657,20 @@
     })
 
     document.querySelectorAll(".footer-icon-container").forEach(elem=>elem.addEventListener("click",(event)=>{
+      const previousTarget = document.querySelector(".devices-container-mobile.active") || {id:0}
       var target = event.srcElement
+
       while(target.tagName !== 'DIV'){
         target = target.parentElement;
       }
+
       document.querySelectorAll(".footer-icon-container").forEach(elem=>elem.classList.remove("active"))
-      target.classList.add("active")
       document.querySelectorAll(".openable").forEach(elem=>elem.classList.remove("active"))
-      document.getElementById(target.getAttribute("opens")).classList.add("active")
+
+      if(previousTarget.id !== target.getAttribute("opens")){
+        target.classList.add("active")
+        document.getElementById(target.getAttribute("opens")).classList.add("active")
+      }
     }))
   </script>
 </body>

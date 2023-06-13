@@ -365,7 +365,7 @@ io.on("connection", (socket) => {
           location
         });
         device.save();
-        socket.broadcast.to("devices-user-"+socket.authorization.subjectId).emit("location-report", data);
+        io.to("devices-user-"+socket.authorization.subjectId).emit("location-report", data);
       }
     })
   })
