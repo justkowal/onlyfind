@@ -237,6 +237,7 @@
         password.innerHTML = `<input id="password" type="password">\n<label for="password">Password</label>`
         submitbtn.classList.add("waves-effect","waves-light","btn-small","light-blue","lighten-1")
         submitbtn.addEventListener('click', onLogin)
+        password.addEventListener("keyup", event => {if(event.key === "Enter") onLogin()})
         submitbtn.innerHTML = `<i class="material-icons right">lock_outline</i>Log in`
         document.querySelector("div.container > h5").innerHTML = "Now please enter your password"
         container.style.maxHeight = container.offsetHeight + 'px';
