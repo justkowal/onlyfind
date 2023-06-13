@@ -341,6 +341,7 @@ io.on("connection", (socket) => {
           sanitizeddevice.originalOwner = null;
           sanitizeddevice.positionReports = sanitizeddevice.positionReports.filter(item => new Date() - item.timestamp <= 24 * 60 * 60 * 1000);
           socket.emit("new-device", sanitizeddevice)
+          console.log(sanitizeddevice)
         })
       });
     }
@@ -374,6 +375,6 @@ app.use(express.static('public'));
 
 // Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(3000, () => {
+server.listen(PORT, () => {
   console.log('listening on *:3000');
 });

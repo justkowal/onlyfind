@@ -34,17 +34,35 @@
 
     .bottom-navbar{
       position:absolute;
+      overflow: hidden;
       bottom:0;
       width:90%;
       height: 8%;
       background-color: #f5f5f57c;
       backdrop-filter: blur(5px);
-      z-index:2;
+      z-index:3;
       display: none;
       justify-content: space-between;
       border: 2px solid #707070;
       border-bottom: none;
       border-radius: 25px 25px 0 0;
+    }
+
+    .devices-container-mobile{
+      display: none;
+      position: absolute;
+      bottom: 0;
+      min-width: 90% !important;
+      padding-bottom: 8vh;
+      background-color: #f5f5f57c;
+      backdrop-filter: blur(5px);
+      z-index:2;
+      max-height: 50vh;
+      border: 2px solid #707070;
+      border-bottom: none;
+      border-radius: 25px 25px 0 0;
+      margin:0;
+      transition: all 1s;
     }
 
     @media only screen and (max-device-width: 685px){
@@ -60,6 +78,11 @@
       body {
         user-select: none;
       }
+      .devices-container-mobile.active{
+        display:block;
+        background-color: #9999997c;
+        min-width: 94% !important;
+      }
     }
 
     .bottom-navbar-container{
@@ -74,6 +97,10 @@
     .bottom-navbar > * > i{
       margin:auto;
       font-size: 30px !important ;
+    }
+
+    .footer-icon-container.active{
+      background-color: #97979741
     }
 
     #logo {
@@ -252,12 +279,32 @@
     if(nologin) window.location.pathname = '/';
   </script>
   <div id="map"></div>
+
   <div class="bottom-navbar-container">
     <div class="bottom-navbar">
-      <div class="footer-icon-container"><i class="material-icons">devices</i></div>
-      <div class="footer-icon-container"><i class="material-icons">person</i></div>
+      <div opens="device-list-mobile" class="footer-icon-container"><i class="material-icons">devices</i></div>
+      <div opens="userinfo" class="footer-icon-container"><i class="material-icons">person</i></div>
+    </div>
+    <ul id="device-list-mobile" class="devices-container-mobile active openable">
+      
+    </ul>
+    <div id="userinfo" style="padding-top: 10px;" class="devices-container-mobile openable">
+      <div id="user-profile">
+        <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile Picture">
+        <span class="user-name">John Doe</span>
+      </div>
+  
+      <div id="footer-icons">
+        <div class="footer-icon-container" onclick="(()=>{
+          document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          window.location.pathname = '/'
+        })();">
+          <i class="material-icons">exit_to_app</i>
+        </div>
+      </div>
     </div>
   </div>
+  
   <div id="sidebar">
     <div id="logo">
       <img src="logo.png" alt="Logo Placeholder">
@@ -335,18 +382,16 @@
 
         const marker = L.marker(loc, { icon: L.icon.glyph({ prefix: 'mdi', glyph: this.getDeviceIcon(deviceType, true) }) }).addTo(this.map);
         marker.bindPopup("<b>"+deviceName + "</b><br>" + this.formatLastSeenDate(lastSeen));
-        
-        if(locationHistory.length > 0) {
-          locationHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          const historyline = L.polyline(locationHistory.map((locationreport) => locationreport.location), {color: 'red', opacity: 0}).addTo(map)
-          historyButton.addEventListener('click',() => {
-            if (historyline.options.opacity === 0) {
-              historyline.setStyle({ opacity: 1 });
-            } else {
-              historyline.setStyle({ opacity: 0 });
-            }
-          })
-        }
+
+        locationHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const historyline = L.polyline(locationHistory.map((locationreport) => locationreport.location), {color: 'red', opacity: 0}).addTo(map)
+        historyButton.addEventListener('click',() => {
+          if (historyline.options.opacity === 0) {
+            historyline.setStyle({ opacity: 1 });
+          } else {
+            historyline.setStyle({ opacity: 0 });
+          }
+        })
         
         deviceItem.addEventListener("dblclick",()=>{
           if (event.target.closest('button')) return;
@@ -458,14 +503,16 @@
         maxZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-    const deviceListElement = document.getElementById("device-list");
+
+    const deviceListElement = document.getElementById((window.innerWidth<=685)?"device-list-mobile":"device-list");
     const deviceTracker = new DeviceTracker(deviceListElement, map);
+
     var socket = io({
       extraHeaders:{ "Authorization": "Bearer "+document.cookie.match(/(^|;) ?token=([^;]*)(;|$)/)[2] }
     })
 
     socket.on('new-device',(device) => {
-      latestLocation = device.positionReports.reduce((latest, item) => (item.timestamp > latest.timestamp ? item : latest))
+      if(device.positionReports.length>0) latestLocation = device.positionReports.reduce((latest, item) => (item.timestamp > latest.timestamp ? item : latest))
       deviceTracker.addDevice(device._id, device.displayName, device.deviceType, latestLocation.location, latestLocation.timestamp, device.positionReports)
       console.log(latestLocation)
     })
@@ -474,6 +521,17 @@
       console.log(data,data.location)
       deviceTracker.updateDeviceLocation(data.deviceId, data.location)
     })
+
+    document.querySelectorAll(".footer-icon-container").forEach(elem=>elem.addEventListener("click",(event)=>{
+      var target = event.srcElement
+      while(target.tagName !== 'DIV'){
+        target = target.parentElement;
+      }
+      document.querySelectorAll(".footer-icon-container").forEach(elem=>elem.classList.remove("active"))
+      target.classList.add("active")
+      document.querySelectorAll(".openable").forEach(elem=>elem.classList.remove("active"))
+      document.getElementById(target.getAttribute("opens")).classList.add("active")
+    }))
   </script>
 </body>
 </html>
